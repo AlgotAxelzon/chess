@@ -1,3 +1,4 @@
+from constants import EP_RANK_BLACK, EP_RANK_WHITE
 from pos import Pos
 from helpfunctions import sign
 
@@ -46,54 +47,52 @@ def knightPattern(move_from, move_to):
 
     return False
 
-def pawnPattern(move_from, move_to, takes, color=""):
+def pawnPattern(move_from, move_to, color=""):
     from_lane, from_rank = Pos.strToInt(move_from)
     to_lane, to_rank = Pos.strToInt(move_to)
 
-    # Can only take diagonally
-    if takes and (to_lane - from_lane) == 0:
-        return False
-    if (not takes) and abs(to_lane - from_lane) == 1:
-        return False
+    lane_diff = to_lane - from_lane
+    rank_diff = to_rank - from_rank
 
     # Can only move to the next 3 squares
-    if not (-1 <= (to_lane - from_lane) <= 1):
+    if not (-1 <= lane_diff <= 1):
         return False
 
     if (color == "white") or color == "":
-        if (to_rank - from_rank) == 1:
+        if rank_diff == 1:
             return True
-        if (to_rank - from_rank) == 2 and from_rank == 2 and not takes:
+        if rank_diff == 2 and from_rank == 2 and lane_diff == 0:
             return True
 
     if (color == "black") or color == "":
-        if (to_rank - from_rank) == -1:
+        if rank_diff == -1:
             return True
-        if (to_rank - from_rank) == -2 and from_rank == 7 and not takes:
+        if rank_diff == -2 and from_rank == 7 and lane_diff == 0:
             return True
 
     return False
 
-def validPattern(move_from, move_to, type, takes):
-    if type == "R":
+def validPattern(move_from, move_to, pieceType, color=""):
+    if pieceType == "R":
         return rookPattern(move_from, move_to)
-    elif type == "B":
+    elif pieceType == "B":
         return bishopPattern(move_from, move_to)
-    elif type == "Q":
+    elif pieceType == "Q":
         return queenPattern(move_from, move_to)
-    elif type == "K":
+    elif pieceType == "K":
         return kingPattern(move_from, move_to)
-    elif type == "N":
+    elif pieceType == "N":
         return knightPattern(move_from, move_to)
-    elif type == "P":
-        return pawnPattern(move_from, move_to, takes)
+    elif pieceType == "P":
+        return pawnPattern(move_from, move_to, color)
     return False
 
 def moveNotBlocked(board, move_from, move_to):
     if not move_from in board.positions:
         raise UserWarning("moveNotBlocked: move_from not in positions")
     
-    type = board.positions[move_from].type
+    pieceType = board.positions[move_from].type
+    pieceColor = board.positions[move_from].color
 
     from_lane, from_rank = Pos.strToInt(move_from)
     to_lane, to_rank = Pos.strToInt(move_to)
@@ -101,26 +100,53 @@ def moveNotBlocked(board, move_from, move_to):
     lane_diff = to_lane - from_lane
     rank_diff = to_rank - from_rank
 
-    if type == "R" or type == "B" or type == "Q":
-        lane_dir = sign(lane_diff)
-        rank_dir = sign(rank_diff)
-        for i in range(1, max(lane_diff, rank_diff)):
-            pos_str = str(Pos(from_lane+lane_dir*i, from_rank+rank_dir*i))
-            if pos_str in board.positions:
-                return False
-        return True
-        
-    elif type == "K" or type == "N":
-        return True
-        
-    elif type == "P":
-        lane_dir = sign(lane_diff)
-        rank_dir = sign(rank_diff)
-        if lane_diff == 0:
-            for i in range(1, max(lane_diff, rank_diff)+1):
-                pos_str = str(Pos(from_lane+lane_dir*i, from_rank+rank_diff*i))
-                if pos_str in board.positions:
-                    return False
-        return True
+    takeEP = False
+    moveEP = False
 
-    raise UserWarning("unexpected piece type")
+    if pieceType == "R" or pieceType == "B" or pieceType == "Q":
+        if validPattern(move_from, move_to, pieceType):
+            lane_dir = sign(lane_diff)
+            rank_dir = sign(rank_diff)
+            for i in range(1, max(abs(lane_diff), abs(rank_diff))):
+                pos_str = str(Pos(from_lane+lane_dir*i, from_rank+rank_dir*i))
+                if pos_str in board.positions:
+                    return False, takeEP, moveEP
+            return True, takeEP, moveEP
+        return False, takeEP, moveEP
+        
+    elif pieceType == "K" or pieceType == "N":
+        return True, takeEP, moveEP
+        
+    elif pieceType == "P":
+        lane_dir = sign(lane_diff)
+        rank_dir = sign(rank_diff)
+        # Move straight
+        if lane_diff == 0:
+            if abs(rank_diff) == 2:
+                moveEP = True
+            for i in range(1, max(abs(lane_diff), abs(rank_diff))+1):
+                pos_str = str(Pos(from_lane+lane_dir*i, from_rank+rank_dir*i))
+                if pos_str in board.positions:
+                    return False, takeEP, moveEP
+            return True, takeEP, moveEP
+        # Move diagonal, take
+        else:
+            # Normal take
+            if move_to in board.positions:
+                return True, takeEP, moveEP
+            # En passant take
+            if pieceColor == "white" and to_rank == 6:
+                posTake = move_to[0] + str(EP_RANK_BLACK)
+                if posTake in board.positions:
+                    if board.positions[posTake].ep == True:
+                        takeEP = True
+                        return True, takeEP, moveEP
+            if pieceColor == "black" and to_rank == 3:
+                posTake = move_to[0] + str(EP_RANK_WHITE)
+                if posTake in board.positions:
+                    if board.positions[posTake].ep == True:
+                        takeEP = True
+                        return True, takeEP, moveEP
+            return False, takeEP, moveEP
+
+    raise UserWarning("unexpected piece pieceType")

@@ -1,6 +1,6 @@
 from copy import deepcopy
 
-from constants import START_PIECES
+from constants import EP_RANK_BLACK, EP_RANK_WHITE, START_PIECES
 from pos import Pos
 from moves import moveNotBlocked, validPattern
 
@@ -93,15 +93,26 @@ class Board(object):
         opponent_pieces = [piece for piece in self.pieces if piece.color != color]
         for piece in opponent_pieces:
             move_from = str(piece.pos)
-            valid = validPattern(move_from, posKing, piece.type, True)
-            valid = valid and moveNotBlocked(self, move_from, posKing)
+            valid = validPattern(move_from, posKing, piece.type)
+            if not valid:
+                continue
+            valid, takeEP, moveEP = moveNotBlocked(self, move_from, posKing)
             if valid:
                 return True
         return False
     
-    def makesSelfCheck(self, move_from, move_to, takes, color):
+    def makesSelfCheck(self, move_from, move_to, takes, color, takeEP):
         board_copy = deepcopy(self)
 
+        if takeEP:
+            if color == "white":
+                posTake = move_to[0] + str(EP_RANK_BLACK)
+            else:
+                posTake = move_to[0] + str(EP_RANK_WHITE)
+            piece_taken = board_copy.positions[posTake]
+            index_taken = board_copy.pieces.index(piece_taken)
+            board_copy.pieces.pop(index_taken)
+        
         if takes:
             piece_taken = board_copy.positions[move_to]
             index_taken = board_copy.pieces.index(piece_taken)
@@ -138,26 +149,43 @@ class Board(object):
                     print("cannot move opponents piece!")
                     continue
 
+                # Test for move following basic piece-rules
                 pieceType = self.posType(move_from)
-                valid = validPattern(move_from, move_to, pieceType, takes)
-                valid = valid and moveNotBlocked(self, move_from, move_to)
+                valid = validPattern(move_from, move_to, pieceType, self.turn)
+                if not valid:
+                    print("invalid move")
+                    continue
+                # Test for move blocked by other pieces
+                valid, takeEP, moveEP = moveNotBlocked(self, move_from, move_to)
                 if valid:
 
-                    # Does the move result in self-check?
-                    if self.makesSelfCheck(move_from, move_to, takes, self.turn):
+                    # Test for move resulting in self-check
+                    if self.makesSelfCheck(move_from, move_to, takes, self.turn, takeEP):
                         print("move puts you in check!")
                         continue
 
-                    if takes:
-                        piece_taken = self.positions[move_to]
-                        # TODO: Save piece_taken to "captured list"/add points
-                        print(self.pieces)
+                    # Piece gets taken
+                    if takeEP or takes:
+                        if takes:
+                            posTaken = move_to
+                        else:
+                            if self.turn == "white":
+                                posTaken = move_to[0] + str(EP_RANK_BLACK)
+                            else:
+                                posTaken = move_to[0] + str(EP_RANK_WHITE)
+
+                        piece_taken = self.positions[posTaken]
                         index_taken = self.pieces.index(piece_taken)
                         self.pieces.pop(index_taken)
 
                     piece_move = self.positions[move_from]
                     index = self.pieces.index(piece_move)
                     self.pieces[index].pos = Pos(Pos.lanes.index(move_to[0])+1, int(move_to[1]))
+                    if moveEP:
+                        self.pieces[index].ep = True
+                    else:
+                        self.pieces[index].ep = False
+
                     self.updatePos()
                     break
 

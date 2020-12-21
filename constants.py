@@ -8,3 +8,6 @@ BLACK_START_PIECES = [Piece("black", "R", Pos(1,8)), Piece("black", "N", Pos(2,8
                       Piece("black", "P", Pos(1,7)), Piece("black", "P", Pos(2,7)), Piece("black", "P", Pos(3,7)), Piece("black", "P", Pos(4,7)), Piece("black", "P", Pos(5,7)), Piece("black", "P", Pos(6,7)), Piece("black", "P", Pos(7,7)), Piece("black", "P", Pos(8,7))]
 
 START_PIECES = WHITE_START_PIECES + BLACK_START_PIECES
+
+EP_RANK_BLACK = 5
+EP_RANK_WHITE = 4
