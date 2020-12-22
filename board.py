@@ -1,8 +1,9 @@
 from copy import deepcopy
+from typing import cast
 
-from constants import EP_RANK_BLACK, EP_RANK_WHITE, START_PIECES
+from constants import CASTLE_BLACK, CASTLE_WHITE, EP_RANK_BLACK, EP_RANK_WHITE, START_PIECES
 from pos import Pos
-from moves import moveNotBlocked, validPattern
+from moves import moveNotBlocked, validPattern, validCastle
 
 class Board(object):
     def __init__(self, pieces=START_PIECES, turn="white"):
@@ -88,6 +89,12 @@ class Board(object):
     def copy(self):
         return Board(self.pieces, self.turn)
 
+    def isCastle(self, move_str):
+        if self.turn == "white":
+            return move_str in CASTLE_WHITE
+        else:
+            return move_str in CASTLE_BLACK
+
     def inCheck(self, color):
         posKing = self.kingPos(color)
         opponent_pieces = [piece for piece in self.pieces if piece.color != color]
@@ -140,6 +147,10 @@ class Board(object):
                 if color_to != self.turn and color_to != "":
                     takes = True
 
+                castle, rook_from, rook_to = False, False, False
+                if self.isCastle(move_str):
+                    castle, rook_from, rook_to = validCastle(self, move_str)
+
                 if self.posColor == self.turn:
                     print("cannot take own piece!")
                     continue
@@ -152,12 +163,12 @@ class Board(object):
                 # Test for move following basic piece-rules
                 pieceType = self.posType(move_from)
                 valid = validPattern(move_from, move_to, pieceType, self.turn)
-                if not valid:
+                if not valid and not castle:
                     print("invalid move")
                     continue
                 # Test for move blocked by other pieces
                 valid, takeEP, moveEP = moveNotBlocked(self, move_from, move_to)
-                if valid:
+                if valid or castle:
 
                     # Test for move resulting in self-check
                     if self.makesSelfCheck(move_from, move_to, takes, self.turn, takeEP):
@@ -178,13 +189,27 @@ class Board(object):
                         index_taken = self.pieces.index(piece_taken)
                         self.pieces.pop(index_taken)
 
+                    # Castle, move rook
+                    if castle:
+                        if rook_from == False or rook_to == False:
+                            raise UserWarning("rook_from or rook_to is False when castle is True") 
+                        piece_move = self.positions[rook_from]
+                        index = self.pieces.index(piece_move)
+                        self.pieces[index].pos = Pos(Pos.lanes.index(rook_to[0])+1, int(rook_to[1]))
+                        # Piece has moved
+                        self.pieces[index].hasMoved = True
+
                     piece_move = self.positions[move_from]
                     index = self.pieces.index(piece_move)
                     self.pieces[index].pos = Pos(Pos.lanes.index(move_to[0])+1, int(move_to[1]))
+                    # Piece can be captured en passant
                     if moveEP:
                         self.pieces[index].ep = True
                     else:
                         self.pieces[index].ep = False
+                    
+                    # Piece has moved
+                    self.pieces[index].hasMoved = True
 
                     self.updatePos()
                     break

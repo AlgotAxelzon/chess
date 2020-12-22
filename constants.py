@@ -11,3 +11,9 @@ START_PIECES = WHITE_START_PIECES + BLACK_START_PIECES
 
 EP_RANK_BLACK = 5
 EP_RANK_WHITE = 4
+
+CASTLE_WHITE = ["e1g1", "e1c1"]
+CASTLE_BLACK = ["e8g8", "e8c8"]
+# [[king, rook, kingMove1/rookMove/emptySq, kingMove2/emptySq, emptySq],]
+CASTLE_WHITE_SQUARES = [["e1", "h1", "f1", "g1", "g1"], ["e1", "a1", "d1", "c1", "b1"]]
+CASTLE_BLACK_SQUARES = [["e8", "h8", "f8", "g8", "g8"], ["e8", "a8", "d8", "c8", "b8"]]

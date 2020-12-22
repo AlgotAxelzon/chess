@@ -4,6 +4,7 @@ class Piece(object):
         self.type = type
         self.pos = pos
         self.ep = False
+        self.hasMoved = False
 
     def __str__(self):
         if self.color == "white":

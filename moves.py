@@ -1,4 +1,4 @@
-from constants import EP_RANK_BLACK, EP_RANK_WHITE
+from constants import CASTLE_BLACK, CASTLE_BLACK_SQUARES, CASTLE_WHITE, CASTLE_WHITE_SQUARES, EP_RANK_BLACK, EP_RANK_WHITE
 from pos import Pos
 from helpfunctions import sign
 
@@ -30,8 +30,14 @@ def queenPattern(move_from, move_to):
 def kingPattern(move_from, move_to):
     from_lane, from_rank = Pos.strToInt(move_from)
     to_lane, to_rank = Pos.strToInt(move_to)
-    
-    if abs(to_lane - from_lane) == 1 or abs(to_rank - from_rank) == 1:
+
+    lane_diff = to_lane - from_lane
+    rank_diff = to_rank - from_rank
+
+    if lane_diff == 0 and rank_diff == 0:
+        return False
+
+    if 0 <= lane_diff <= 1 and 0 <= rank_diff <= 1:
         return True
 
     return False
@@ -150,3 +156,45 @@ def moveNotBlocked(board, move_from, move_to):
             return False, takeEP, moveEP
 
     raise UserWarning("unexpected piece pieceType")
+
+def validCastle(board, move_str):
+    color = board.turn
+    if color == "white":
+        move_ref = CASTLE_WHITE
+        squares_ref = CASTLE_WHITE_SQUARES
+    else:
+        move_ref = CASTLE_BLACK
+        squares_ref = CASTLE_BLACK_SQUARES
+    
+    castle_type = move_ref.index(move_str)
+    castle_sqares = squares_ref[castle_type]
+
+    # Squares between king and rook is empty
+    s1, s2, s3 = castle_sqares[2:]
+    if s1 in board.positions or s2 in board.positions or s3 in board.positions:
+        return False, False, False
+
+    # King has already been moved
+    if castle_sqares[0] in board.positions:
+        if board.positions[castle_sqares[0]].hasMoved:
+            return False, False, False
+
+    # Rook has already been moved
+    if castle_sqares[1] in board.positions:
+        if board.positions[castle_sqares[1]].hasMoved:
+            return False, False, False
+
+    # King is in check before castle
+    if board.inCheck(color):
+        return False, False, False
+
+    # King on transition square 1 is in check
+    if board.makesSelfCheck(move_str[:2], castle_sqares[2], False, color, False):
+        return False, False, False
+
+    # King on transition square 2 is in check
+    if board.makesSelfCheck(move_str[:2], castle_sqares[3], False, color, False):
+        return False, False, False
+
+    #            rook_from         rook_to
+    return True, castle_sqares[1], castle_sqares[2]
