@@ -1,9 +1,8 @@
 from copy import deepcopy
-from typing import cast
 
-from constants import CASTLE_BLACK, CASTLE_WHITE, EP_RANK_BLACK, EP_RANK_WHITE, START_PIECES
-from pos import Pos
-from moves import moveNotBlocked, validPattern, validCastle
+from chess_app.constants import CASTLE_BLACK, CASTLE_WHITE, EP_RANK_BLACK, EP_RANK_WHITE, START_PIECES
+from chess_app.pos import Pos
+from chess_app.moves import moveNotBlocked, validPattern, validCastle
 
 class Board(object):
     def __init__(self, pieces=START_PIECES, turn="white"):
@@ -19,10 +18,17 @@ class Board(object):
         self.positions = positions
         return positions
 
+    def positionsDict(self):
+        res = deepcopy(self.positions)
+        for key in res:
+            res[key] = res[key].asdict()
+        return res
+
     def asdict(self):
         return {
-            "pieces": self.pieces,
-            "turn": self.turn
+            "pieces": [p.asdict() for p in self.pieces],
+            "turn": self.turn,
+            "positions": self.positionsDict()
         }
 
     @staticmethod
@@ -68,12 +74,6 @@ class Board(object):
         if pos_str in self.positions:
             return self.positions[pos_str].color
         return ""
-        raise UserWarning("no piece on pos")
-
-    # def posEmpty(self, pos_str):
-    #     for _ in self.positions[pos_str]:
-    #         return False
-    #     return True
 
     def posType(self, pos_str):
         if pos_str in self.positions:
@@ -84,7 +84,7 @@ class Board(object):
         for p in self.pieces:
             if p.type == "K" and p.color == color:
                 return str(p.pos)
-        raise UserWarning("could not find king")
+        print("could not find king")
 
     def copy(self):
         return Board(self.pieces, self.turn)
@@ -103,7 +103,7 @@ class Board(object):
             valid = validPattern(move_from, posKing, piece.type)
             if not valid:
                 continue
-            valid, takeEP, moveEP = moveNotBlocked(self, move_from, posKing)
+            valid, _, _ = moveNotBlocked(self, move_from, posKing)
             if valid:
                 return True
         return False
@@ -132,99 +132,87 @@ class Board(object):
 
         return board_copy.inCheck(color)
 
-        
-
-
-    def moveInput(self):
-        while True:
+    def moveInput(self, move=""):
+        if move == "":
             move_str = input(self.turn + "s move:").lower()
-            if len(move_str) == 4 and move_str[:2] in self.positions:
-                move_from = move_str[:2]
-                move_to = move_str[2:]
+        else:
+            move_str = move
+        if len(move_str) == 4 and move_str[:2] in self.positions:
+            move_from = move_str[:2]
+            move_to = move_str[2:]
 
-                takes = False
-                color_to = self.posColor(move_to)
-                if color_to != self.turn and color_to != "":
-                    takes = True
+            takes = False
+            color_to = self.posColor(move_to)
+            if color_to != self.turn and color_to != "":
+                takes = True
 
-                castle, rook_from, rook_to = False, False, False
-                if self.isCastle(move_str):
-                    castle, rook_from, rook_to = validCastle(self, move_str)
+            castle, rook_from, rook_to = False, False, False
+            if self.isCastle(move_str):
+                castle, rook_from, rook_to = validCastle(self, move_str)
 
-                if self.posColor == self.turn:
-                    print("cannot take own piece!")
-                    continue
+            if self.posColor == self.turn:
+                print("cannot take own piece!")
+                return False
 
-                # Not allowed to move opponents piece
-                if self.posColor(move_from) != self.turn:
-                    print("cannot move opponents piece!")
-                    continue
+            # Not allowed to move opponents piece
+            if self.posColor(move_from) != self.turn:
+                print("cannot move opponents piece!")
+                return False
 
-                # Test for move following basic piece-rules
-                pieceType = self.posType(move_from)
-                valid = validPattern(move_from, move_to, pieceType, self.turn)
-                if not valid and not castle:
-                    print("invalid move")
-                    continue
-                # Test for move blocked by other pieces
-                valid, takeEP, moveEP = moveNotBlocked(self, move_from, move_to)
-                if valid or castle:
+            # Test for move following basic piece-rules
+            pieceType = self.posType(move_from)
+            valid = validPattern(move_from, move_to, pieceType, self.turn)
+            if not valid and not castle:
+                print("invalid move")
+                return False
+            
+            # Test for move blocked by other pieces
+            valid, takeEP, moveEP = moveNotBlocked(self, move_from, move_to)
+            if valid or castle:
 
-                    # Test for move resulting in self-check
-                    if self.makesSelfCheck(move_from, move_to, takes, self.turn, takeEP):
-                        print("move puts you in check!")
-                        continue
+                # Test for move resulting in self-check
+                if self.makesSelfCheck(move_from, move_to, takes, self.turn, takeEP):
+                    print("move puts you in check!")
+                    return False
 
-                    # Piece gets taken
-                    if takeEP or takes:
-                        if takes:
-                            posTaken = move_to
-                        else:
-                            if self.turn == "white":
-                                posTaken = move_to[0] + str(EP_RANK_BLACK)
-                            else:
-                                posTaken = move_to[0] + str(EP_RANK_WHITE)
-
-                        piece_taken = self.positions[posTaken]
-                        index_taken = self.pieces.index(piece_taken)
-                        self.pieces.pop(index_taken)
-
-                    # Castle, move rook
-                    if castle:
-                        if rook_from == False or rook_to == False:
-                            raise UserWarning("rook_from or rook_to is False when castle is True") 
-                        piece_move = self.positions[rook_from]
-                        index = self.pieces.index(piece_move)
-                        self.pieces[index].pos = Pos(Pos.lanes.index(rook_to[0])+1, int(rook_to[1]))
-                        # Piece has moved
-                        self.pieces[index].hasMoved = True
-
-                    piece_move = self.positions[move_from]
-                    index = self.pieces.index(piece_move)
-                    self.pieces[index].pos = Pos(Pos.lanes.index(move_to[0])+1, int(move_to[1]))
-                    # Piece can be captured en passant
-                    if moveEP:
-                        self.pieces[index].ep = True
+                # Piece gets taken
+                if takeEP or takes:
+                    if takes:
+                        posTaken = move_to
                     else:
-                        self.pieces[index].ep = False
-                    
+                        if self.turn == "white":
+                            posTaken = move_to[0] + str(EP_RANK_BLACK)
+                        else:
+                            posTaken = move_to[0] + str(EP_RANK_WHITE)
+
+                    piece_taken = self.positions[posTaken]
+                    index_taken = self.pieces.index(piece_taken)
+                    self.pieces.pop(index_taken)
+
+                # If castle, move rook
+                if castle:
+                    if rook_from == False or rook_to == False:
+                        print("rook_from or rook_to is False when castle is True") 
+                    piece_move = self.positions[rook_from]
+                    index = self.pieces.index(piece_move)
+                    self.pieces[index].pos = Pos(Pos.lanes.index(rook_to[0])+1, int(rook_to[1]))
                     # Piece has moved
                     self.pieces[index].hasMoved = True
 
-                    self.updatePos()
-                    break
+                piece_move = self.positions[move_from]
+                index = self.pieces.index(piece_move)
+                self.pieces[index].pos = Pos(Pos.lanes.index(move_to[0])+1, int(move_to[1]))
+                
+                # Piece can be captured en passant
+                if moveEP:
+                    self.pieces[index].ep = True
+                else:
+                    self.pieces[index].ep = False
+                
+                # Piece has moved
+                self.pieces[index].hasMoved = True
 
-            print("invalid move.")
-        return move_str
-
-    # def move(self, move_str):
-    #     move_from = move_str[:2]
-    #     move_to = move_str[2:]
-
-    #     pieceType = self.posType(move_from)
-    #     if validPattern(move_from, move_to, pieceType):
-    #         piece_move = self.positions[move_from]
-    #         index = self.pieces.index(piece_move)
-    #         self.pieces[index].pos = Pos(Pos.lanes.index(move_to[0])+1, int(move_to[1]))
-    #         self.updatePos()
-    
+                self.updatePos()
+                return True
+        print("invalid move.")
+        return False

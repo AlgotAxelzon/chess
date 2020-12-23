@@ -1,5 +1,5 @@
-from piece import Piece
-from pos import Pos
+from chess_app.piece import Piece
+from chess_app.pos import Pos
 
 WHITE_START_PIECES = [Piece("white", "R", Pos(1,1)), Piece("white", "N", Pos(2,1)), Piece("white", "B", Pos(3,1)), Piece("white", "Q", Pos(4,1)), Piece("white", "K", Pos(5,1)), Piece("white", "B", Pos(6,1)), Piece("white", "N", Pos(7,1)), Piece("white", "R", Pos(8,1)), 
                       Piece("white", "P", Pos(1,2)), Piece("white", "P", Pos(2,2)), Piece("white", "P", Pos(3,2)), Piece("white", "P", Pos(4,2)), Piece("white", "P", Pos(5,2)), Piece("white", "P", Pos(6,2)), Piece("white", "P", Pos(7,2)), Piece("white", "P", Pos(8,2))]

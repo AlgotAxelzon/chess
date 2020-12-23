@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Chess</title>
+        <link rel="shortcut icon" href="{{ url_for('static', filename='img/Chess_plt45.svg') }}">
+        <link rel="stylesheet" href="{{url_for('static', filename='style.css')}}">
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/3.0.1/socket.io.min.js"></script>
+    </head>
+    <body>
+        <div class="wrapper">
+            <table id="board">
+                <tbody>
+                    {% set lanes = ["a", "b", "c", "d", "e", "f", "g", "h"] %}
+                    {% for i in range(8) %}
+                    <tr>
+                        {% for j in range(8) %}
+                        {% set laneLabel = lanes[j] if i == 7 else "" %}
+                        {% set laneLabelClass = "laneLabel" if i == 7 else "" %}
+                        {% set rankLabel = (8-i)|string if j == 0 else "" %}
+                        {% set rankLabelClass = "rankLabel" if j == 0 else "" %}
+                        {% set squareColor = "dark" if (i+j+1)%2 == 0 else "light" %}
+                        {% set pos = lanes[j] + (8-i)|string %}
+                        <td><div id="{{ pos }}" class="square {{ squareColor }}"><span class="{{ laneLabelClass }}">{{ laneLabel }}</span><span class="{{ rankLabelClass }}">{{ rankLabel }}</span></div>
+                        {% endfor %}
+                    </tr>
+                    {% endfor %}
+                </table>
+            </tbody>
+            <div class="shareLinks">
+                <button id="play" onclick="copyToClipboard('play')">Invite to play</button>
+                <button id="spectate" onclick="copyToClipboard('spectate')">Invite to spectate</button>
+            </div>
+        </div>
+        <img src="{{url_for('static', filename='img/Chess_plt45.svg')}}" class="follow" style="width: 40px; position: absolute;"/>
+        <script src="{{url_for('static', filename='js/match.js')}}"></script>
+    </body>
+</html>

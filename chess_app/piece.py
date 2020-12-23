@@ -6,6 +6,13 @@ class Piece(object):
         self.ep = False
         self.hasMoved = False
 
+    def asdict(self):
+        return {
+            "color": self.color,
+            "type": self.type,
+            "pos": self.pos.asdict()
+        }
+
     def __str__(self):
         if self.color == "white":
             return self.type.upper()

@@ -1,6 +1,6 @@
-from constants import CASTLE_BLACK, CASTLE_BLACK_SQUARES, CASTLE_WHITE, CASTLE_WHITE_SQUARES, EP_RANK_BLACK, EP_RANK_WHITE
-from pos import Pos
-from helpfunctions import sign
+from chess_app.constants import CASTLE_BLACK, CASTLE_BLACK_SQUARES, CASTLE_WHITE, CASTLE_WHITE_SQUARES, EP_RANK_BLACK, EP_RANK_WHITE
+from chess_app.pos import Pos
+from chess_app.helpfunctions import sign
 
 def rookPattern(move_from, move_to):
     from_lane, from_rank = Pos.strToInt(move_from)

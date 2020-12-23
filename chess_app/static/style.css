@@ -1,0 +1,81 @@
+body {
+    width: 100%;
+}
+
+/* WRAPPER */
+.wrapper {
+    width: 100%;
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+}
+
+/* BOARD */
+.follow {
+    pointer-events: none;
+}
+
+table#board {
+    border-collapse: collapse;
+    width: 50%;
+}
+
+table#board tr td {
+    border: solid grey 2px;
+    width: 12.5%;
+    padding-bottom: 12.5%;
+    position: relative;
+}
+
+td .square {
+    background-position: center;
+    background-size: auto 85%;
+    background-repeat: no-repeat;
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+}
+
+.light {
+    background-color: #ffce9e;
+}
+
+.dark {
+    background-color: #d18b47;
+}
+
+.laneLabel,
+.rankLabel {
+    position: absolute;
+    font-size: 90%;
+    font-family: sans-serif;
+    user-select: none;
+}
+
+.laneLabel {
+    bottom: 0;
+    right: 4%;
+}
+
+.rankLabel {
+    top: 0;
+    left: 2%;
+}
+
+/* BUTTONS */
+.buttons {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    margin: 20px;
+}
+
+/* SHARE LINKS */
+.shareLinks {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    margin: 20px;
+}
