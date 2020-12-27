@@ -16,7 +16,32 @@ function drawBoard(board) {
         pieceColor = data.color == "white" ? "l" : "d";
         url = `/static/img/Chess_${pieceType + pieceColor}t45.svg`;
         $("#" + key).css("background-image", `url(${url})`);
-    })
+    });
+}
+
+function changeBoard(changes) {
+    $(".from").removeClass("from");
+    $(".to").removeClass("to");
+    // Draw pieces
+    $.each(changes, function(key, data) {
+        if (data == "empty") {
+            $("#" + key).css("background-image", "none");
+            $("#" + key).attr("hasPiece", "false");
+        } else if (data == "from") {
+            $("#" + key).css("background-image", "none");
+            $("#" + key).addClass("from");
+            $("#" + key).attr("hasPiece", "false");
+        } else {
+            if (data.hasOwnProperty("to")) {
+                $("#" + key).addClass("to");
+            }
+            pieceType = data.type.toLowerCase();
+            pieceColor = data.color == "white" ? "l" : "d";
+            url = `/static/img/Chess_${pieceType + pieceColor}t45.svg`;
+            $("#" + key).css("background-image", `url(${url})`);
+            $("#" + key).attr("hasPiece", "true");
+        }
+    });
 }
 
 
@@ -36,7 +61,6 @@ $(document).ready(function() {
     });
     
     socket.on("updateBoard", function(data) {
-        match = JSON.parse(data.match);
-        drawBoard(match.board);
+        changeBoard(data.changed);
     });
 });

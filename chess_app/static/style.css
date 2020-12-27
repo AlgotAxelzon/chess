@@ -12,6 +12,8 @@ body {
 
 /* BOARD */
 .follow {
+    width: 40px;
+    position: absolute;
     pointer-events: none;
 }
 
@@ -44,6 +46,16 @@ td .square {
 
 .dark {
     background-color: #d18b47;
+}
+
+.dark.from,
+.dark.to {
+    background-color: #d1bc47;
+}
+
+.light.from,
+.light.to {
+    background-color: #c2ce7e;
 }
 
 .laneLabel,

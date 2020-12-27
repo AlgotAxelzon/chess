@@ -152,19 +152,19 @@ class Board(object):
 
             if self.posColor == self.turn:
                 print("cannot take own piece!")
-                return False
+                return False, None
 
             # Not allowed to move opponents piece
             if self.posColor(move_from) != self.turn:
                 print("cannot move opponents piece!")
-                return False
+                return False, None
 
             # Test for move following basic piece-rules
             pieceType = self.posType(move_from)
             valid = validPattern(move_from, move_to, pieceType, self.turn)
             if not valid and not castle:
                 print("invalid move")
-                return False
+                return False, None
             
             # Test for move blocked by other pieces
             valid, takeEP, moveEP = moveNotBlocked(self, move_from, move_to)
@@ -173,7 +173,7 @@ class Board(object):
                 # Test for move resulting in self-check
                 if self.makesSelfCheck(move_from, move_to, takes, self.turn, takeEP):
                     print("move puts you in check!")
-                    return False
+                    return False, None
 
                 # Piece gets taken
                 if takeEP or takes:
@@ -189,6 +189,8 @@ class Board(object):
                     index_taken = self.pieces.index(piece_taken)
                     self.pieces.pop(index_taken)
 
+                changed = dict()
+                
                 # If castle, move rook
                 if castle:
                     if rook_from == False or rook_to == False:
@@ -198,11 +200,19 @@ class Board(object):
                     self.pieces[index].pos = Pos(Pos.lanes.index(rook_to[0])+1, int(rook_to[1]))
                     # Piece has moved
                     self.pieces[index].hasMoved = True
+                    # Squares changed
+                    changed[rook_from] = "empty"
+                    changed[rook_to] = self.pieces[index].asdict()
 
                 piece_move = self.positions[move_from]
                 index = self.pieces.index(piece_move)
                 self.pieces[index].pos = Pos(Pos.lanes.index(move_to[0])+1, int(move_to[1]))
-                
+                # Squares changed
+                changed[move_from] = "from"
+                temp = self.pieces[index].asdict()
+                temp["to"] = True
+                changed[move_to] = temp
+
                 # Piece can be captured en passant
                 if moveEP:
                     self.pieces[index].ep = True
@@ -213,6 +223,6 @@ class Board(object):
                 self.pieces[index].hasMoved = True
 
                 self.updatePos()
-                return True
+                return True, changed
         print("invalid move.")
-        return False
+        return False, None

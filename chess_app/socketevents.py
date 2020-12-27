@@ -63,12 +63,17 @@ def handle_playMatch(data):
         match = Match.matches[match_id]
         turnIndex = 0 if match.board.turn == "white" else 1
         if request.sid == match.players[turnIndex]:
-            if match.board.moveInput(move):
+            move_ok, changed = match.board.moveInput(move)
+            if move_ok:
                 match.board.newTurn()
-                emit("updateBoard", {"match": match.asjson()}, room=match_id)
+                # emit("updateBoard", {"board": match.board}, room=match_id)
+                emit("updateBoard", {"changed": changed}, room=match_id)
             else:
                 print(str(request.sid) + " tried to make invalid move in match " + match_id)
+                emit("revertMove")
         else:
             print(str(request.sid) + " tried to make a move on opponents turn in match " + match_id)
+            emit("revertMove")
     else:
         print(str(request.sid) + " tried to make move in non-existing match " + match_id)
+        emit("revertMove")

@@ -21,13 +21,41 @@ function drawBoard(board) {
     });
 }
 
+function changeBoard(changes) {
+    $(".from").removeClass("from");
+    $(".to").removeClass("to");
+    // Draw pieces
+    $.each(changes, function(key, data) {
+        if (data == "empty") {
+            $("#" + key).css("background-image", "none");
+            $("#" + key).attr("hasPiece", "false");
+        } else if (data == "from") {
+            $("#" + key).css("background-image", "none");
+            $("#" + key).addClass("from");
+            $("#" + key).attr("hasPiece", "false");
+        } else {
+            if (data.hasOwnProperty("to")) {
+                $("#" + key).addClass("to");
+            }
+            pieceType = data.type.toLowerCase();
+            pieceColor = data.color == "white" ? "l" : "d";
+            url = `/static/img/Chess_${pieceType + pieceColor}t45.svg`;
+            $("#" + key).css("background-image", `url(${url})`);
+            $("#" + key).attr("hasPiece", "true");
+        }
+    });
+}
+
 clickSquare = "";
 isDragging = false;
 fromSquare = "";
 toSquare = "";
+toSquareOldUrl = "";
+draggedUrl = "";
 
 
 $(document).ready(function() {
+    $(".follow").hide();
     var socket = io();
     page_match_id = window.location.pathname.split("/")[2];
     console.log(page_match_id);
@@ -48,15 +76,19 @@ $(document).ready(function() {
     });
 
     socket.on("updateBoard", function(data) {
-        match = JSON.parse(data.match);
-        drawBoard(match.board);
+        changeBoard(data.changed);
+    });
+
+    socket.on("revertMove", function() {
+        $("#" + toSquare).css("background-image", toSquareOldUrl);
+        $("#" + fromSquare).css("background-image", draggedUrl);
     });
     
     $(document).mousemove(function(e) {
         if (isDragging) {
             $(".follow").offset({
-                left: e.pageX,
-                top: e.pageY
+                left: e.pageX - width/2,
+                top: e.pageY - width/2
             });
         }
     });
@@ -65,20 +97,27 @@ $(document).ready(function() {
         clickSquare = $(this).attr("id");
         hasPiece = $(this).attr("hasPiece");
         if (hasPiece == "true" && !isDragging) {
+            width = $(this).width();
+            draggedUrl = $(this).css("background-image");
+            srcUrl = "/static" + draggedUrl.split("\"")[1].split("static")[1].split("svg")[0] + "svg";
+            $(".follow").attr("src", srcUrl);
+            $(".follow").css("width", width);
+            $(".follow").show();
+            $(this).css("border", "solid black 2px");
+            $(this).css("background-image", "none");
             isDragging = true;
             fromSquare = clickSquare;
-            // TODO: remove piece from clickSquare, put on cursor
         } else if (isDragging) {
-            // TODO: Place dragging piece on clickSquare
+            $(".follow").hide();
+            $("#" + fromSquare).css("border", "none");
             isDragging = false;
             toSquare = clickSquare;
             move = fromSquare + toSquare;
+            toSquareOldUrl = $(this).css("background-image");
+            $(this).css("background-image", draggedUrl);
             if (clickSquare != fromSquare) {
                 socket.emit("move", {"move": move, "match_id": page_match_id});
-                console.log("move: " + move);
             }
-            fromSquare = "";
-            toSquare = "";
         }
     });
 });
