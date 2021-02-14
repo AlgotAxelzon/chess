@@ -22,6 +22,7 @@ function drawBoard(board) {
 }
 
 function changeBoard(changes) {
+    if (!changes) return;
     $(".from").removeClass("from");
     $(".to").removeClass("to");
     // Draw pieces
@@ -67,6 +68,7 @@ $(document).ready(function() {
     socket.on("joinedPlay", function(data) {
         match = JSON.parse(data.match);
         drawBoard(match.board);
+        changeBoard(match.board.changed);
         // TODO: updatePlayers(match.players, match.spectators);
     });
 

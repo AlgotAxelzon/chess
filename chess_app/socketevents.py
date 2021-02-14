@@ -34,13 +34,13 @@ def handle_playMatch(data):
     match_id = data["match_id"]
     if match_id in Match.matches:
         match = Match.matches[match_id]
-        if len(match.players) < 2:
-            join_room(match_id)
-            match.players.append(request.sid)
-            emit("joinedPlay", {"match": match.asjson()})
-        else:
-            match.spectators.append(request.sid)
-            emit("toSpectate", {"match_id": match_id})
+        # if len(match.players) < 2:
+        join_room(match_id)
+        match.players.append(request.sid)
+        emit("joinedPlay", {"match": match.asjson()})
+        # else:
+        #     match.spectators.append(request.sid)
+        #     emit("toSpectate", {"match_id": match_id})
     else:
         print(str(request.sid) + " tried to play non-existing match " + match_id)
 
@@ -61,19 +61,19 @@ def handle_playMatch(data):
     move = data["move"]
     if match_id in Match.matches:
         match = Match.matches[match_id]
-        turnIndex = 0 if match.board.turn == "white" else 1
-        if request.sid == match.players[turnIndex]:
-            move_ok, changed = match.board.moveInput(move)
-            if move_ok:
-                match.board.newTurn()
-                # emit("updateBoard", {"board": match.board}, room=match_id)
-                emit("updateBoard", {"changed": changed}, room=match_id)
-            else:
-                print(str(request.sid) + " tried to make invalid move in match " + match_id)
-                emit("revertMove")
+        # turnIndex = 0 if match.board.turn == "white" else 1
+        # if request.sid == match.players[turnIndex]:
+        move_ok = match.board.moveInput(move)
+        if move_ok:
+            match.board.newTurn()
+            # emit("updateBoard", {"board": match.board}, room=match_id)
+            emit("updateBoard", {"changed": match.board.changed}, room=match_id)
         else:
-            print(str(request.sid) + " tried to make a move on opponents turn in match " + match_id)
+            print(str(request.sid) + " tried to make invalid move in match " + match_id)
             emit("revertMove")
+        # else:
+        #     print(str(request.sid) + " tried to make a move on opponents turn in match " + match_id)
+        #     emit("revertMove")
     else:
         print(str(request.sid) + " tried to make move in non-existing match " + match_id)
         emit("revertMove")

@@ -9,6 +9,7 @@ class Board(object):
         self.pieces = pieces
         self.turn = turn
         self.positions = self.updatePos()
+        self.changed = dict()
 
     def updatePos(self):
         positions = dict()
@@ -28,7 +29,8 @@ class Board(object):
         return {
             "pieces": [p.asdict() for p in self.pieces],
             "turn": self.turn,
-            "positions": self.positionsDict()
+            "positions": self.positionsDict(),
+            "changed": self.changed
         }
 
     @staticmethod
@@ -152,19 +154,19 @@ class Board(object):
 
             if self.posColor == self.turn:
                 print("cannot take own piece!")
-                return False, None
+                return False
 
             # Not allowed to move opponents piece
             if self.posColor(move_from) != self.turn:
                 print("cannot move opponents piece!")
-                return False, None
+                return False
 
             # Test for move following basic piece-rules
             pieceType = self.posType(move_from)
             valid = validPattern(move_from, move_to, pieceType, self.turn)
             if not valid and not castle:
                 print("invalid move")
-                return False, None
+                return False
             
             # Test for move blocked by other pieces
             valid, takeEP, moveEP = moveNotBlocked(self, move_from, move_to)
@@ -173,7 +175,7 @@ class Board(object):
                 # Test for move resulting in self-check
                 if self.makesSelfCheck(move_from, move_to, takes, self.turn, takeEP):
                     print("move puts you in check!")
-                    return False, None
+                    return False
 
                 # Piece gets taken
                 if takeEP or takes:
@@ -223,6 +225,7 @@ class Board(object):
                 self.pieces[index].hasMoved = True
 
                 self.updatePos()
-                return True, changed
+                self.changed = changed
+                return True
         print("invalid move.")
-        return False, None
+        return False
